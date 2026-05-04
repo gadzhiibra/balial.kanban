@@ -1,0 +1,767 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Канбан — Закупки</title>
+<link href="https://fonts.googleapis.com/css2?family=Unbounded:wght@400;600&family=Inter:wght@400;500&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --bg: #F0EDE8; --surface: #FAFAF8; --card-bg: #FFFFFF; --border: #D8D4CC;
+  --text: #1A1A18; --muted: #888880;
+  --todo-accent: #2D2D2A; --doing-accent: #C87941; --done-accent: #3D7A5A;
+  --urgent-bg: #FEF0E6; --urgent-text: #B05A1A;
+  --regular-bg: #E8F0FE; --regular-text: #2A5AA0;
+  --danger: #B03030;
+}
+body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+
+/* SCREENS */
+.screen { display: none; }
+.screen.active { display: block; }
+#login-screen.active { display: flex; min-height: 100vh; align-items: center; justify-content: center; }
+
+/* AUTH */
+.auth-box {
+  background: var(--surface); border: 1px solid var(--border); border-radius: 16px;
+  padding: 40px 36px; width: 360px; display: flex; flex-direction: column; gap: 14px;
+}
+.auth-box h2 { font-family: 'Unbounded', sans-serif; font-size: 16px; font-weight: 600; letter-spacing: -0.02em; }
+.auth-box p { font-size: 13px; color: var(--muted); line-height: 1.5; }
+.auth-box label { font-size: 12px; color: var(--muted); margin-bottom: -8px; }
+.auth-box input { font-family: 'Inter', sans-serif; font-size: 14px; border: 1px solid var(--border); border-radius: 8px; padding: 10px 12px; background: var(--card-bg); color: var(--text); width: 100%; }
+.auth-box input:focus { outline: 2px solid var(--todo-accent); border-color: transparent; }
+.auth-error { font-size: 12px; color: var(--danger); min-height: 16px; }
+.btn-primary { font-family: 'Inter', sans-serif; font-size: 13px; font-weight: 500; padding: 11px; background: var(--text); color: #FAFAF8; border: none; border-radius: 8px; cursor: pointer; transition: opacity 0.1s; }
+.btn-primary:hover { opacity: 0.82; }
+.btn-primary:disabled { opacity: 0.4; cursor: default; }
+
+/* HEADER */
+header { background: var(--text); color: #FAFAF8; padding: 0 32px; display: flex; align-items: stretch; min-height: 52px; }
+.header-brand { font-family: 'Unbounded', sans-serif; font-size: 15px; font-weight: 600; letter-spacing: -0.02em; display: flex; align-items: center; margin-right: auto; }
+.header-tabs { display: flex; }
+.htab { font-size: 12px; font-family: 'Inter', sans-serif; color: rgba(250,250,248,0.5); padding: 0 18px; cursor: pointer; border-bottom: 2px solid transparent; display: flex; align-items: center; gap: 6px; background: none; border-top: none; border-left: none; border-right: none; transition: color 0.15s, border-color 0.15s; white-space: nowrap; }
+.htab:hover { color: rgba(250,250,248,0.85); }
+.htab.active { color: #FAFAF8; border-bottom-color: var(--doing-accent); }
+.header-right { display: flex; align-items: center; gap: 10px; padding-left: 24px; }
+.header-user { font-size: 12px; opacity: 0.55; }
+.header-user strong { opacity: 1; font-weight: 500; color: #FAFAF8; }
+.btn-logout { font-size: 11px; padding: 4px 10px; background: transparent; border: 1px solid rgba(255,255,255,0.2); border-radius: 6px; color: rgba(250,250,248,0.6); cursor: pointer; font-family: 'Inter', sans-serif; transition: all 0.1s; }
+.btn-logout:hover { background: rgba(255,255,255,0.1); color: #FAFAF8; }
+
+/* ONLINE BAR */
+.online-bar { padding: 7px 32px; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; font-size: 12px; color: var(--muted); border-bottom: 1px solid var(--border); background: var(--surface); }
+.online-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--done-accent); flex-shrink: 0; }
+.online-chip { background: var(--bg); border: 1px solid var(--border); border-radius: 99px; padding: 2px 10px; font-size: 11px; }
+.online-chip.me { border-color: var(--todo-accent); font-weight: 500; }
+
+/* BOARD */
+.board { display: grid; grid-template-columns: repeat(3,1fr); gap: 16px; padding: 24px 32px; max-width: 1200px; margin: 0 auto; }
+.col { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; display: flex; flex-direction: column; min-height: 500px; }
+.col-header { padding: 14px 16px 10px; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.col-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+.col[data-col="todo"] .col-dot { background: var(--todo-accent); }
+.col[data-col="doing"] .col-dot { background: var(--doing-accent); }
+.col[data-col="done"] .col-dot { background: var(--done-accent); }
+.col-title { font-family: 'Unbounded', sans-serif; font-size: 12px; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; flex: 1; }
+.col-count { font-size: 12px; color: var(--muted); background: var(--bg); border: 1px solid var(--border); border-radius: 99px; padding: 2px 8px; }
+/* Hours counter in done column */
+.hours-counter { font-size: 11px; color: var(--done-accent); background: #EEF7F2; border: 1px solid #B8DEC8; border-radius: 99px; padding: 2px 10px; font-weight: 500; }
+.col-header-sub { width: 100%; padding: 0 0 4px; font-size: 11px; color: var(--muted); }
+
+.cards-list { flex: 1; padding: 12px; display: flex; flex-direction: column; gap: 8px; }
+
+/* CARDS */
+.card { background: var(--card-bg); border: 1px solid var(--border); border-radius: 8px; padding: 12px; cursor: grab; transition: box-shadow 0.15s, transform 0.15s; }
+.card:hover { box-shadow: 0 2px 8px rgba(0,0,0,0.08); transform: translateY(-1px); }
+.card:active { cursor: grabbing; }
+.card.dragging { opacity: 0.35; transform: scale(0.97); }
+
+/* Mirror cards — assigned by me to someone else */
+.card.mirror { background: #FAFAF8; border: 1.5px dashed #C8C4BC; cursor: default; }
+.card.mirror:hover { transform: none; box-shadow: none; }
+.mirror-label { font-size: 11px; color: var(--muted); margin-bottom: 7px; display: flex; align-items: center; gap: 5px; }
+.mirror-label .assignee { font-weight: 600; color: var(--doing-accent); }
+.mirror-eye { opacity: 0.5; }
+
+/* Cards assigned by someone to me */
+.card.assigned-to-me { border-left: 3px solid var(--doing-accent); }
+.card-from { font-size: 11px; color: var(--doing-accent); font-weight: 500; margin-bottom: 6px; }
+
+.card-text { font-size: 14px; line-height: 1.45; margin-bottom: 10px; white-space: pre-wrap; }
+.col[data-col="done"] .card-text { color: var(--muted); text-decoration: line-through; }
+.card-footer { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.tag { font-size: 11px; font-weight: 500; padding: 2px 8px; border-radius: 99px; flex-shrink: 0; }
+.tag-urgent { background: var(--urgent-bg); color: var(--urgent-text); }
+.tag-regular { background: var(--regular-bg); color: var(--regular-text); }
+.card-btns { display: flex; gap: 4px; margin-left: auto; opacity: 0; transition: opacity 0.15s; }
+.card:hover .card-btns { opacity: 1; }
+.btn-sm { font-size: 11px; padding: 3px 8px; border: 1px solid var(--border); border-radius: 6px; background: var(--surface); color: var(--muted); cursor: pointer; white-space: nowrap; }
+.btn-sm:hover { background: var(--bg); color: var(--text); }
+.btn-del { border: none; background: transparent; color: var(--muted); font-size: 13px; cursor: pointer; padding: 3px 5px; border-radius: 6px; }
+.btn-del:hover { background: #FDECEA; color: var(--danger); }
+
+/* HOURS INPUT on done cards */
+.hours-row { margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--border); display: flex; align-items: center; gap: 6px; }
+.hours-row label { font-size: 11px; color: var(--muted); white-space: nowrap; }
+.hours-controls { display: flex; align-items: center; gap: 0; border: 1px solid var(--border); border-radius: 7px; overflow: hidden; background: var(--card-bg); }
+.hours-btn { width: 28px; height: 28px; border: none; background: var(--bg); color: var(--text); font-size: 15px; cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0; transition: background 0.1s; line-height: 1; }
+.hours-btn:hover { background: #E0DDD8; }
+.hours-input { width: 52px; height: 28px; border: none; border-left: 1px solid var(--border); border-right: 1px solid var(--border); text-align: center; font-family: 'Inter', sans-serif; font-size: 13px; font-weight: 500; color: var(--text); background: var(--card-bg); outline: none; }
+.hours-input:focus { background: #FFF; }
+.hours-unit { font-size: 11px; color: var(--muted); }
+.hours-saved { font-size: 11px; color: var(--done-accent); font-weight: 500; }
+.hours-row.needs-input { background: #FFFBF5; margin: 10px -12px -12px; padding: 10px 12px 12px; border-radius: 0 0 7px 7px; border-top: 1px solid #F0D8B0; }
+
+/* DROP ZONE */
+.drop-zone { border: 2px dashed var(--border); border-radius: 8px; height: 52px; display: none; align-items: center; justify-content: center; font-size: 12px; color: var(--muted); margin: 0 12px 8px; }
+.drop-zone.visible { display: flex; }
+.drop-zone.over { background: #EEF5EE; border-color: var(--done-accent); color: var(--done-accent); }
+
+/* ADD FORM */
+.add-area { padding: 8px 12px 12px; border-top: 1px solid var(--border); }
+.add-toggle { font-size: 12px; color: var(--muted); background: transparent; border: 1px solid var(--border); border-radius: 6px; cursor: pointer; padding: 3px 10px; display: flex; align-items: center; gap: 4px; white-space: nowrap; }
+.add-toggle:hover { color: var(--text); background: var(--bg); }
+.add-form { display: none; flex-direction: column; gap: 8px; padding-top: 10px; }
+.add-form.open { display: flex; }
+textarea.add-input { width: 100%; font-family: 'Inter', sans-serif; font-size: 13px; border: 1px solid var(--border); border-radius: 8px; padding: 8px 10px; background: var(--card-bg); color: var(--text); resize: none; line-height: 1.45; }
+textarea.add-input:focus { outline: 2px solid var(--todo-accent); border-color: transparent; }
+.add-row { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+.add-row select { font-family: 'Inter', sans-serif; font-size: 12px; border: 1px solid var(--border); border-radius: 6px; padding: 4px 6px; background: var(--card-bg); color: var(--text); cursor: pointer; }
+.assign-label { font-size: 11px; color: var(--muted); white-space: nowrap; }
+.btn-add { font-family: 'Inter', sans-serif; font-size: 12px; padding: 5px 14px; background: var(--text); color: #FAFAF8; border: none; border-radius: 6px; cursor: pointer; }
+.btn-add:hover { opacity: 0.82; }
+.btn-cancel-sm { font-size: 12px; padding: 5px 10px; background: transparent; border: 1px solid var(--border); border-radius: 6px; cursor: pointer; color: var(--muted); font-family: 'Inter', sans-serif; }
+
+/* ADMIN */
+#admin-view { display: none; max-width: 900px; margin: 0 auto; padding: 24px 32px; }
+#admin-view.open { display: block; }
+.section-title { font-family: 'Unbounded', sans-serif; font-size: 13px; font-weight: 600; margin-bottom: 16px; }
+.admin-form { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 20px; margin-bottom: 24px; display: flex; flex-direction: column; gap: 10px; }
+.admin-form h3 { font-family: 'Unbounded', sans-serif; font-size: 11px; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; color: var(--muted); }
+.admin-row { display: flex; gap: 8px; align-items: flex-end; flex-wrap: wrap; }
+.admin-field { display: flex; flex-direction: column; gap: 5px; flex: 1; min-width: 120px; }
+.admin-field label { font-size: 11px; color: var(--muted); }
+.admin-field input { font-family: 'Inter', sans-serif; font-size: 13px; border: 1px solid var(--border); border-radius: 7px; padding: 8px 10px; background: var(--card-bg); color: var(--text); }
+.admin-field input:focus { outline: 2px solid var(--todo-accent); border-color: transparent; }
+.admin-msg { font-size: 12px; min-height: 16px; }
+.admin-msg.ok { color: var(--done-accent); }
+.admin-msg.err { color: var(--danger); }
+.users-table { width: 100%; background: var(--surface); border: 1px solid var(--border); border-radius: 12px; overflow: hidden; border-collapse: collapse; }
+.users-table th { font-family: 'Unbounded', sans-serif; font-size: 10px; font-weight: 600; letter-spacing: 0.05em; text-transform: uppercase; color: var(--muted); padding: 10px 14px; text-align: left; border-bottom: 1px solid var(--border); background: var(--bg); }
+.users-table td { font-size: 13px; padding: 10px 14px; border-bottom: 1px solid var(--border); vertical-align: middle; }
+.users-table tr:last-child td { border-bottom: none; }
+.role-badge { font-size: 10px; font-weight: 600; padding: 2px 8px; border-radius: 99px; background: var(--urgent-bg); color: var(--urgent-text); }
+.role-badge.user { background: var(--regular-bg); color: var(--regular-text); }
+.btn-icon { border: none; background: transparent; cursor: pointer; color: var(--muted); font-size: 13px; padding: 3px 6px; border-radius: 5px; }
+.btn-icon:hover { background: #FDECEA; color: var(--danger); }
+
+/* History table */
+.history-section { margin-top: 28px; }
+.history-table { width: 100%; background: var(--surface); border: 1px solid var(--border); border-radius: 12px; overflow: hidden; border-collapse: collapse; }
+.history-table th { font-family: 'Unbounded', sans-serif; font-size: 10px; font-weight: 600; letter-spacing: 0.05em; text-transform: uppercase; color: var(--muted); padding: 10px 14px; text-align: left; border-bottom: 1px solid var(--border); background: var(--bg); }
+.history-table td { font-size: 13px; padding: 10px 14px; border-bottom: 1px solid var(--border); }
+.history-table tr:last-child td { border-bottom: none; }
+.history-table .hours-val { font-weight: 600; color: var(--done-accent); }
+
+@media (max-width: 700px) {
+  .board { grid-template-columns: 1fr; padding: 12px; }
+  header { padding: 0 16px; }
+  .online-bar { padding: 7px 16px; }
+  #admin-view { padding: 16px; }
+}
+</style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div id="login-screen" class="screen active">
+  <div class="auth-box">
+    <h2>Канбан — Закупки</h2>
+    <p>Введите имя пользователя и пароль</p>
+    <label>Имя пользователя</label>
+    <input type="text" id="auth-name" placeholder="Имя" autocomplete="username">
+    <label>Пароль</label>
+    <input type="password" id="auth-pass" placeholder="Пароль" autocomplete="current-password">
+    <div class="auth-error" id="auth-error"></div>
+    <button class="btn-primary" id="btn-login" onclick="doLogin()">Войти →</button>
+  </div>
+</div>
+
+<!-- APP -->
+<div id="app-screen" class="screen">
+  <header>
+    <span class="header-brand">Закупки</span>
+    <div class="header-tabs">
+      <button class="htab active" data-tab="board" onclick="switchTab('board')">Моя доска</button>
+      <button class="htab" data-tab="admin" id="admin-tab" style="display:none" onclick="switchTab('admin')">Сотрудники</button>
+    </div>
+    <div class="header-right">
+      <span class="header-user">Вы: <strong id="header-name"></strong></span>
+      <button class="btn-logout" onclick="doLogout()">Выйти</button>
+    </div>
+  </header>
+
+  <div class="online-bar" id="online-bar">
+    <div class="online-dot"></div>
+    <span style="margin-right:4px">Онлайн:</span>
+  </div>
+
+  <div id="board-view">
+    <div class="board" id="board"></div>
+  </div>
+
+  <div id="admin-view">
+    <div class="section-title">Управление сотрудниками</div>
+    <div class="admin-form">
+      <h3>Добавить сотрудника</h3>
+      <div class="admin-row">
+        <div class="admin-field"><label>Имя</label><input type="text" id="new-uname" placeholder="Иван Петров" maxlength="32"></div>
+        <div class="admin-field"><label>Пароль</label><input type="password" id="new-upass" placeholder="Придумайте пароль" maxlength="64"></div>
+        <div class="admin-field" style="flex:0"><label>&nbsp;</label><button class="btn-primary" style="padding:8px 18px;font-size:12px" onclick="createUser()">Создать</button></div>
+      </div>
+      <div class="admin-msg" id="admin-msg"></div>
+    </div>
+    <table class="users-table" id="users-table">
+      <thead><tr><th>Имя</th><th>Роль</th><th>Часов в этом месяце</th><th></th></tr></thead>
+      <tbody id="users-tbody"></tbody>
+    </table>
+    <div class="history-section" id="history-section" style="display:none">
+      <div class="section-title" style="margin-top:8px">История часов по месяцам</div>
+      <table class="history-table">
+        <thead><tr><th>Сотрудник</th><th>Месяц</th><th>Часов</th></tr></thead>
+        <tbody id="history-tbody"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<script>
+const DB = 'https://balial-848fe-default-rtdb.europe-west1.firebasedatabase.app';
+const COLS = [
+  { id: 'todo',  label: 'Задачи' },
+  { id: 'doing', label: 'В работе' },
+  { id: 'done',  label: 'Выполнено' }
+];
+
+// ── Firebase REST ──────────────────────────────────────────────────
+async function fbGet(path) {
+  try { const r = await fetch(`${DB}/${path}.json`); return await r.json(); } catch { return null; }
+}
+async function fbSet(path, data) {
+  try { await fetch(`${DB}/${path}.json`, { method:'PUT', body:JSON.stringify(data) }); } catch {}
+}
+async function fbPush(path, data) {
+  try { const r = await fetch(`${DB}/${path}.json`, { method:'POST', body:JSON.stringify(data) }); return await r.json(); } catch { return null; }
+}
+async function fbDelete(path) {
+  try { await fetch(`${DB}/${path}.json`, { method:'DELETE' }); } catch {}
+}
+async function fbPatch(path, data) {
+  try { await fetch(`${DB}/${path}.json`, { method:'PATCH', body:JSON.stringify(data) }); } catch {}
+}
+function fbListen(path, cb) {
+  const es = new EventSource(`${DB}/${path}.json`);
+  es.addEventListener('put', e => { try { cb(JSON.parse(e.data).data); } catch {} });
+  es.addEventListener('patch', () => cb(null));
+  return es;
+}
+
+// ── State ──────────────────────────────────────────────────────────
+let me = null;
+let myCards = {};       // My own tasks (including ones assigned to me)
+let mirrorCards = {};   // Tasks I assigned to others (read-only view)
+let allUsers = {};
+let onlineUsers = {};
+let dragKey = null;
+let currentTab = 'board';
+let presenceTimer = null;
+let eventSources = [];
+
+// ── Crypto ─────────────────────────────────────────────────────────
+async function hashPass(pass) {
+  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(pass + 'kb_salt_2024'));
+  return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2,'0')).join('');
+}
+
+// ── Month key ──────────────────────────────────────────────────────
+function monthKey(ts) {
+  const d = ts ? new Date(ts) : new Date();
+  return `${d.getFullYear()}_${String(d.getMonth()+1).padStart(2,'0')}`;
+}
+function monthLabel(key) {
+  const [y, m] = key.split('_');
+  return new Date(+y, +m-1, 1).toLocaleString('ru', { month: 'long', year: 'numeric' });
+}
+
+// ── Login ──────────────────────────────────────────────────────────
+async function doLogin() {
+  const name = document.getElementById('auth-name').value.trim();
+  const pass = document.getElementById('auth-pass').value;
+  const errEl = document.getElementById('auth-error');
+  const btn = document.getElementById('btn-login');
+  errEl.textContent = '';
+  if (!name || !pass) { errEl.textContent = 'Заполните все поля'; return; }
+  btn.disabled = true; btn.textContent = 'Проверяем...';
+
+  const users = await fbGet('users');
+  if (!users) {
+    // First ever login — becomes admin
+    const hash = await hashPass(pass);
+    await fbSet(`users/${safe(name)}`, { name, role: 'admin', hash });
+    me = { name, role: 'admin' };
+  } else {
+    const key = safe(name);
+    const user = users[key];
+    if (!user) { errEl.textContent = 'Пользователь не найден'; btn.disabled = false; btn.textContent = 'Войти →'; return; }
+    const hash = await hashPass(pass);
+    if (hash !== user.hash) { errEl.textContent = 'Неверный пароль'; btn.disabled = false; btn.textContent = 'Войти →'; return; }
+    me = { name: user.name, role: user.role };
+  }
+  localStorage.setItem('kb_session', JSON.stringify(me));
+  btn.disabled = false; btn.textContent = 'Войти →';
+  startApp();
+}
+
+function doLogout() {
+  if (me) fbDelete(`presence/${safe(me.name)}`);
+  eventSources.forEach(es => es.close()); eventSources = [];
+  clearInterval(presenceTimer); me = null;
+  localStorage.removeItem('kb_session');
+  show('login-screen');
+}
+
+// ── App start ──────────────────────────────────────────────────────
+async function startApp() {
+  show('app-screen');
+  document.getElementById('header-name').textContent = me.name;
+  if (me.role === 'admin') document.getElementById('admin-tab').style.display = 'flex';
+
+  const key = safe(me.name);
+  await fbSet(`presence/${key}`, Date.now());
+  presenceTimer = setInterval(() => fbSet(`presence/${key}`, Date.now()), 20000);
+
+  const es1 = fbListen(`cards/${key}`, async () => {
+    myCards = (await fbGet(`cards/${key}`)) || {};
+    if (currentTab === 'board') render();
+  });
+  const es2 = fbListen(`mirrors/${key}`, async () => {
+    mirrorCards = (await fbGet(`mirrors/${key}`)) || {};
+    if (currentTab === 'board') render();
+  });
+  const es3 = fbListen('presence', async () => {
+    onlineUsers = (await fbGet('presence')) || {};
+    renderOnlineBar();
+  });
+  const es4 = fbListen('users', async () => {
+    allUsers = (await fbGet('users')) || {};
+    if (currentTab === 'admin') renderAdmin();
+    if (currentTab === 'board') render();
+  });
+  eventSources = [es1, es2, es3, es4];
+
+  myCards = (await fbGet(`cards/${key}`)) || {};
+  mirrorCards = (await fbGet(`mirrors/${key}`)) || {};
+  onlineUsers = (await fbGet('presence')) || {};
+  allUsers = (await fbGet('users')) || {};
+
+  render(); renderOnlineBar();
+  switchTab('board');
+}
+
+// ── Online bar ─────────────────────────────────────────────────────
+function renderOnlineBar() {
+  const bar = document.getElementById('online-bar');
+  bar.innerHTML = '<div class="online-dot"></div><span style="margin-right:4px">Онлайн:</span>';
+  const now = Date.now();
+  Object.entries(onlineUsers).filter(([,ts]) => now - ts < 60000).forEach(([k]) => {
+    const uname = allUsers[k]?.name || k;
+    const chip = document.createElement('span');
+    chip.className = 'online-chip' + (k === safe(me.name) ? ' me' : '');
+    chip.textContent = k === safe(me.name) ? `${uname} (вы)` : uname;
+    bar.appendChild(chip);
+  });
+}
+
+// ── Tabs ───────────────────────────────────────────────────────────
+function switchTab(tab) {
+  currentTab = tab;
+  document.querySelectorAll('.htab').forEach(t => t.classList.toggle('active', t.dataset.tab === tab));
+  document.getElementById('board-view').style.display = tab === 'board' ? 'block' : 'none';
+  document.getElementById('admin-view').classList.toggle('open', tab === 'admin');
+  if (tab === 'admin') renderAdmin();
+}
+
+// ── Board render ───────────────────────────────────────────────────
+function render() {
+  const board = document.getElementById('board');
+  board.innerHTML = '';
+  const myKey = safe(me.name);
+
+  const otherUsers = Object.entries(allUsers)
+    .filter(([k]) => k !== myKey)
+    .map(([, u]) => u.name);
+
+  const curMonth = monthKey();
+
+  COLS.forEach((col, ci) => {
+    const colMyCards = Object.entries(myCards).filter(([,c]) => c.col === col.id);
+    const colMirrors = Object.entries(mirrorCards).filter(([,m]) => m.col === col.id);
+    const totalCount = colMyCards.length + colMirrors.length;
+
+    // Hours counter for done column
+    let hoursHTML = '';
+    if (col.id === 'done') {
+      const totalHours = Object.values(myCards)
+        .filter(c => c.col === 'done' && c.hours && monthKey(c.doneAt) === curMonth)
+        .reduce((s, c) => s + (c.hours || 0), 0);
+      const mirrorHours = Object.values(mirrorCards)
+        .filter(m => m.col === 'done' && m.hours && monthKey(m.doneAt) === curMonth)
+        .reduce((s, m) => s + (m.hours || 0), 0);
+      const combined = totalHours + mirrorHours;
+      hoursHTML = `<span class="hours-counter">⏱ ${combined % 1 === 0 ? combined : combined.toFixed(1)} ч / месяц</span>`;
+    }
+
+    const el = document.createElement('div');
+    el.className = 'col'; el.dataset.col = col.id;
+    el.innerHTML = `
+      <div class="col-header">
+        <div class="col-dot"></div>
+        <span class="col-title">${col.label}</span>
+        <span class="col-count">${totalCount}</span>
+        ${hoursHTML}
+      </div>
+      <div class="add-area">
+        <button class="add-toggle" onclick="toggleForm('${col.id}')">+ Добавить задачу</button>
+        <div class="add-form" id="form-${col.id}">
+          <textarea class="add-input" id="inp-${col.id}" rows="2" placeholder="Описание задачи..."></textarea>
+          <div class="add-row">
+            <select id="tag-${col.id}">
+              <option value="regular">Обычная</option>
+              <option value="urgent">Срочная</option>
+            </select>
+            <span class="assign-label">Кому:</span>
+            <select id="assign-${col.id}">
+              <option value="${esc(me.name)}">Себе</option>
+              ${otherUsers.map(n => `<option value="${esc(n)}">${esc(n)}</option>`).join('')}
+            </select>
+            <button class="btn-add" onclick="handleAdd('${col.id}')">Добавить</button>
+            <button class="btn-cancel-sm" onclick="toggleForm('${col.id}')">Отмена</button>
+          </div>
+        </div>
+      </div>
+      <div class="drop-zone" id="dz-${col.id}">Перетащить сюда</div>
+      <div class="cards-list" id="list-${col.id}"></div>`;
+    board.appendChild(el);
+
+    const list = el.querySelector(`#list-${col.id}`);
+
+    // ── My own cards ──
+    colMyCards.forEach(([key, card]) => {
+      const isAssignedToMe = card.from && card.from !== me.name;
+      const cardEl = document.createElement('div');
+      cardEl.className = 'card' + (isAssignedToMe ? ' assigned-to-me' : '');
+      cardEl.draggable = true;
+
+      const prevBtn = ci > 0 ? `<button class="btn-sm" onclick="moveCard('${key}',-1)">← ${COLS[ci-1].label}</button>` : '';
+      const nextBtn = ci < COLS.length-1 ? `<button class="btn-sm" onclick="moveCard('${key}',1)">${COLS[ci+1].label} →</button>` : '';
+      const fromLabel = isAssignedToMe ? `<div class="card-from">↩ от ${esc(card.from)}</div>` : '';
+
+      // Hours section for done column
+      let hoursSection = '';
+      if (col.id === 'done') {
+        if (card.hours) {
+          hoursSection = `<div class="hours-row"><span class="hours-saved">⏱ ${card.hours % 1 === 0 ? card.hours : card.hours.toFixed(1)} ч потрачено</span></div>`;
+        } else {
+          hoursSection = `
+            <div class="hours-row needs-input">
+              <label>Затрачено времени:</label>
+              <div class="hours-controls">
+                <button class="hours-btn" onclick="changeHours('${key}', -0.5)">‹</button>
+                <input class="hours-input" type="number" id="hi-${key}" value="1" min="0.5" step="0.5" onchange="clampHours('${key}')">
+                <button class="hours-btn" onclick="changeHours('${key}', 0.5)">›</button>
+              </div>
+              <span class="hours-unit">ч</span>
+              <button class="btn-sm" onclick="saveHours('${key}')">✓ Сохранить</button>
+            </div>`;
+        }
+      }
+
+      cardEl.innerHTML = `
+        ${fromLabel}
+        <div class="card-text">${esc(card.text)}</div>
+        <div class="card-footer">
+          <span class="tag tag-${card.tag}">${card.tag==='urgent'?'Срочно':'Обычная'}</span>
+          <div class="card-btns">${prevBtn}${nextBtn}
+            <button class="btn-del" onclick="deleteCard('${key}')">✕</button>
+          </div>
+        </div>
+        ${hoursSection}`;
+
+      cardEl.addEventListener('dragstart', () => { dragKey = key; setTimeout(() => cardEl.classList.add('dragging'), 0); });
+      cardEl.addEventListener('dragend', () => { dragKey = null; cardEl.classList.remove('dragging'); document.querySelectorAll('.drop-zone').forEach(dz => dz.classList.remove('over','visible')); });
+      list.appendChild(cardEl);
+    });
+
+    // ── Mirror cards (assigned by me, read-only) ──
+    colMirrors.forEach(([mKey, mirror]) => {
+      const mEl = document.createElement('div');
+      mEl.className = 'card mirror';
+
+      let mirrorHoursSection = '';
+      if (col.id === 'done' && mirror.hours) {
+        mirrorHoursSection = `<div class="hours-row"><span class="hours-saved">⏱ ${mirror.hours % 1 === 0 ? mirror.hours : mirror.hours.toFixed(1)} ч потрачено</span></div>`;
+      }
+
+      mEl.innerHTML = `
+        <div class="mirror-label">
+          <span class="mirror-eye">👁</span>
+          <span>Назначено:</span>
+          <span class="assignee">${esc(mirror.assignedTo)}</span>
+        </div>
+        <div class="card-text">${esc(mirror.text)}</div>
+        <div class="card-footer">
+          <span class="tag tag-${mirror.tag}">${mirror.tag==='urgent'?'Срочно':'Обычная'}</span>
+          <div class="card-btns" style="opacity:1">
+            <button class="btn-del" onclick="recallTask('${mKey}')" title="Отозвать задачу">✕</button>
+          </div>
+        </div>
+        ${mirrorHoursSection}`;
+      list.appendChild(mEl);
+    });
+
+    // ── Drag & drop ──
+    const dz = el.querySelector(`#dz-${col.id}`);
+    el.addEventListener('dragover', e => { e.preventDefault(); if (dragKey) dz.classList.add('visible','over'); });
+    el.addEventListener('dragleave', e => { if (!el.contains(e.relatedTarget)) dz.classList.remove('over','visible'); });
+    el.addEventListener('drop', async e => {
+      e.preventDefault(); dz.classList.remove('over','visible');
+      if (!dragKey) return;
+      const oldCol = myCards[dragKey]?.col;
+      if (oldCol === col.id) return;
+      await fbPatch(`cards/${safe(me.name)}/${dragKey}`, { col: col.id, ...(col.id === 'done' ? { doneAt: Date.now() } : {}) });
+      await syncMirrorCol(dragKey, col.id);
+    });
+  });
+}
+
+// ── Sync mirror col when executor moves card ───────────────────────
+async function syncMirrorCol(cardKey, newCol, hours) {
+  const card = myCards[cardKey];
+  if (!card || !card.from || card.from === me.name) return;
+  const fromKey = safe(card.from);
+  const mirrors = (await fbGet(`mirrors/${fromKey}`)) || {};
+  const entry = Object.entries(mirrors).find(([,m]) => m.assignedCardKey === cardKey);
+  if (!entry) return;
+  const patch = { col: newCol };
+  if (newCol === 'done') { patch.doneAt = Date.now(); }
+  if (hours !== undefined) patch.hours = hours;
+  await fbPatch(`mirrors/${fromKey}/${entry[0]}`, patch);
+}
+
+// ── Card ops ───────────────────────────────────────────────────────
+async function moveCard(key, dir) {
+  const c = myCards[key]; if (!c) return;
+  const ni = COLS.findIndex(x => x.id === c.col) + dir;
+  if (ni < 0 || ni >= COLS.length) return;
+  const newCol = COLS[ni].id;
+  const extra = newCol === 'done' ? { doneAt: Date.now() } : {};
+  await fbPatch(`cards/${safe(me.name)}/${key}`, { col: newCol, ...extra });
+  await syncMirrorCol(key, newCol);
+}
+
+async function deleteCard(key) {
+  const c = myCards[key];
+  await fbDelete(`cards/${safe(me.name)}/${key}`);
+  // Remove mirror at author's side
+  if (c?.from && c.from !== me.name) {
+    const fromKey = safe(c.from);
+    const mirrors = (await fbGet(`mirrors/${fromKey}`)) || {};
+    const entry = Object.entries(mirrors).find(([,m]) => m.assignedCardKey === key);
+    if (entry) await fbDelete(`mirrors/${fromKey}/${entry[0]}`);
+  }
+}
+
+async function recallTask(mKey) {
+  const mirror = mirrorCards[mKey];
+  if (!mirror) return;
+  // Delete executor's card
+  if (mirror.assignedCardKey) {
+    await fbDelete(`cards/${mirror.assignedToKey}/${mirror.assignedCardKey}`);
+  }
+  // Delete mirror
+  await fbDelete(`mirrors/${safe(me.name)}/${mKey}`);
+}
+
+// ── Hours ──────────────────────────────────────────────────────────
+function changeHours(key, delta) {
+  const inp = document.getElementById('hi-' + key);
+  if (!inp) return;
+  const val = Math.max(0.5, Math.round((parseFloat(inp.value || 1) + delta) * 2) / 2);
+  inp.value = val;
+}
+
+function clampHours(key) {
+  const inp = document.getElementById('hi-' + key);
+  if (!inp) return;
+  const val = Math.max(0.5, Math.round(parseFloat(inp.value || 0.5) * 2) / 2);
+  inp.value = val;
+}
+
+async function saveHours(key) {
+  const inp = document.getElementById('hi-' + key);
+  if (!inp) return;
+  const hours = Math.max(0.5, Math.round(parseFloat(inp.value || 0.5) * 2) / 2);
+  const myKey = safe(me.name);
+  const doneAt = myCards[key]?.doneAt || Date.now();
+  await fbPatch(`cards/${myKey}/${key}`, { hours, doneAt });
+  // Save to history
+  const mk = monthKey(doneAt);
+  const histPath = `history/${myKey}/${mk}`;
+  const existing = (await fbGet(histPath)) || 0;
+  await fbSet(histPath, existing + hours);
+  // Sync to mirror
+  await syncMirrorCol(key, 'done', hours);
+}
+
+// ── Add card ───────────────────────────────────────────────────────
+async function handleAdd(colId) {
+  const inp = document.getElementById('inp-'+colId);
+  const tag = document.getElementById('tag-'+colId).value;
+  const assignTo = document.getElementById('assign-'+colId).value;
+  const text = inp.value.trim();
+  if (!text) return;
+
+  const myKey = safe(me.name);
+
+  if (assignTo !== me.name) {
+    const toKey = safe(assignTo);
+    // Create card directly on executor's board
+    const newCardRef = await fbPush(`cards/${toKey}`, {
+      col: colId, text, tag, from: me.name, ts: Date.now()
+    });
+    const newCardKey = newCardRef?.name || null;
+    // Create mirror for the author
+    await fbPush(`mirrors/${myKey}`, {
+      text, tag,
+      assignedTo: assignTo,
+      assignedToKey: toKey,
+      assignedCardKey: newCardKey,
+      col: colId,
+      ts: Date.now()
+    });
+  } else {
+    await fbPush(`cards/${myKey}`, { col: colId, text, tag, from: me.name, ts: Date.now() });
+  }
+
+  inp.value = '';
+  document.getElementById('form-'+colId).classList.remove('open');
+}
+
+// ── Admin ──────────────────────────────────────────────────────────
+async function createUser() {
+  const nameVal = document.getElementById('new-uname').value.trim();
+  const passVal = document.getElementById('new-upass').value;
+  const msg = document.getElementById('admin-msg');
+  msg.className = 'admin-msg';
+  if (!nameVal || !passVal) { msg.className = 'admin-msg err'; msg.textContent = 'Заполните имя и пароль'; return; }
+  const key = safe(nameVal);
+  const existing = await fbGet(`users/${key}`);
+  if (existing) { msg.className = 'admin-msg err'; msg.textContent = 'Пользователь уже существует'; return; }
+  const hash = await hashPass(passVal);
+  await fbSet(`users/${key}`, { name: nameVal, role: 'user', hash });
+  document.getElementById('new-uname').value = '';
+  document.getElementById('new-upass').value = '';
+  msg.className = 'admin-msg ok'; msg.textContent = `✓ Сотрудник «${nameVal}» создан`;
+  setTimeout(() => { msg.textContent = ''; }, 3000);
+}
+
+async function deleteUser(key) {
+  if (key === safe(me.name)) return;
+  if (!confirm('Удалить пользователя и все его данные?')) return;
+  await fbDelete(`users/${key}`);
+  await fbDelete(`cards/${key}`);
+  await fbDelete(`mirrors/${key}`);
+  await fbDelete(`presence/${key}`);
+  await fbDelete(`history/${key}`);
+}
+
+async function renderAdmin() {
+  const tbody = document.getElementById('users-tbody');
+  tbody.innerHTML = '<tr><td colspan="4" style="color:var(--muted);font-size:12px;padding:14px">Загружаем...</td></tr>';
+
+  const curMonth = monthKey();
+  const allHistory = (await fbGet('history')) || {};
+
+  tbody.innerHTML = '';
+  Object.entries(allUsers).forEach(([key, u]) => {
+    const isMe = key === safe(me.name);
+    const monthHours = allHistory[key]?.[curMonth] || 0;
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td>${esc(u.name)}${isMe ? ' <span style="font-size:11px;color:var(--muted)">(вы)</span>' : ''}</td>
+      <td><span class="role-badge ${u.role==='admin'?'':'user'}">${u.role==='admin'?'Админ':'Сотрудник'}</span></td>
+      <td class="hours-val" style="color:var(--done-accent);font-weight:600">${monthHours % 1 === 0 ? monthHours : monthHours.toFixed(1)} ч</td>
+      <td style="text-align:right">${!isMe ? `<button class="btn-icon" onclick="deleteUser('${key}')">✕</button>` : ''}</td>`;
+    tbody.appendChild(tr);
+  });
+
+  // History table
+  const histSection = document.getElementById('history-section');
+  const histTbody = document.getElementById('history-tbody');
+  histTbody.innerHTML = '';
+  let hasHistory = false;
+
+  Object.entries(allHistory).forEach(([uKey, months]) => {
+    const uName = allUsers[uKey]?.name || uKey;
+    Object.entries(months)
+      .sort(([a],[b]) => b.localeCompare(a))
+      .forEach(([mk, hours]) => {
+        hasHistory = true;
+        const tr = document.createElement('tr');
+        tr.innerHTML = `<td>${esc(uName)}</td><td>${monthLabel(mk)}</td><td class="hours-val">${hours % 1 === 0 ? hours : hours.toFixed(1)} ч</td>`;
+        histTbody.appendChild(tr);
+      });
+  });
+
+  histSection.style.display = hasHistory ? 'block' : 'none';
+}
+
+// ── Helpers ────────────────────────────────────────────────────────
+function esc(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+function safe(n) { return String(n||'').toLowerCase().replace(/[^a-zа-яёa-z0-9]/gi,'_'); }
+function show(id) { document.querySelectorAll('.screen').forEach(s => s.classList.remove('active')); document.getElementById(id).classList.add('active'); }
+function toggleForm(colId) {
+  const form = document.getElementById('form-'+colId);
+  const isOpen = form.classList.contains('open');
+  document.querySelectorAll('.add-form').forEach(f => f.classList.remove('open'));
+  if (!isOpen) { form.classList.add('open'); document.getElementById('inp-'+colId).focus(); }
+}
+
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') document.querySelectorAll('.add-form').forEach(f => f.classList.remove('open'));
+  if (e.key === 'Enter' && e.target.classList.contains('add-input')) {
+    if (e.shiftKey) return; e.preventDefault();
+    handleAdd(e.target.id.replace('inp-',''));
+  }
+});
+['auth-name','auth-pass'].forEach(id => {
+  document.getElementById(id).addEventListener('keydown', e => { if (e.key==='Enter') doLogin(); });
+});
+
+// ── Auto-login ─────────────────────────────────────────────────────
+(async () => {
+  const saved = localStorage.getItem('kb_session');
+  if (saved) {
+    try {
+      me = JSON.parse(saved);
+      const u = await fbGet(`users/${safe(me.name)}`);
+      if (u) { startApp(); return; }
+    } catch {}
+    localStorage.removeItem('kb_session');
+  }
+})();
+</script>
+</body>
+</html>
