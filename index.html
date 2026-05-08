@@ -17,7 +17,6 @@
 }
 body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
 
-/* SCREENS */
 .screen { display: none; }
 .screen.active { display: block; }
 #login-screen.active { display: flex; min-height: 100vh; align-items: center; justify-content: center; }
@@ -47,8 +46,9 @@ header { background: var(--text); color: #FAFAF8; padding: 0 32px; display: flex
 .btn-logout { font-size: 11px; padding: 4px 10px; background: transparent; border: 1px solid rgba(255,255,255,0.2); border-radius: 6px; color: rgba(250,250,248,0.6); cursor: pointer; font-family: 'Inter', sans-serif; transition: all 0.1s; }
 .btn-logout:hover { background: rgba(255,255,255,0.1); color: #FAFAF8; }
 
-/* ONLINE BAR */
+/* ONLINE BAR — только для админа, скрыт по умолчанию */
 .online-bar { padding: 7px 32px; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; font-size: 12px; color: var(--muted); border-bottom: 1px solid var(--border); background: var(--surface); }
+.online-bar.hidden { display: none; }
 .online-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--done-accent); flex-shrink: 0; }
 .online-chip { background: var(--bg); border: 1px solid var(--border); border-radius: 99px; padding: 2px 10px; font-size: 11px; }
 .online-chip.me { border-color: var(--todo-accent); font-weight: 500; }
@@ -101,6 +101,15 @@ header { background: var(--text); color: #FAFAF8; padding: 0 32px; display: flex
 .add-toggle:hover { color: var(--text); background: var(--bg); }
 .add-form { display: none; flex-direction: column; gap: 8px; padding-top: 10px; }
 .add-form.open { display: flex; }
+
+/* Urgent toggle button */
+.urgent-toggle { width: 32px; height: 32px; border-radius: 8px; border: 2px solid var(--border); background: var(--card-bg); font-size: 16px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.15s; flex-shrink: 0; }
+.urgent-toggle:hover { border-color: #E05050; }
+.urgent-toggle.active { background: #E05050; border-color: #E05050; box-shadow: 0 2px 8px rgba(224,80,80,0.35); }
+
+.add-form-top { display: flex; align-items: flex-start; gap: 8px; }
+.add-form-top textarea { flex: 1; }
+
 textarea.add-input { width: 100%; font-family: 'Inter', sans-serif; font-size: 13px; border: 1px solid var(--border); border-radius: 8px; padding: 8px 10px; background: var(--card-bg); color: var(--text); resize: none; line-height: 1.45; }
 textarea.add-input:focus { outline: 2px solid var(--todo-accent); border-color: transparent; }
 .add-row { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
@@ -122,7 +131,7 @@ textarea.add-input:focus { outline: 2px solid var(--todo-accent); border-color: 
 .hours-row.needs-input { background: #FFFBF5; margin: 10px -12px -12px; padding: 10px 12px 12px; border-radius: 0 0 7px 7px; border-top: 1px solid #F0D8B0; }
 
 /* ADMIN */
-#admin-view { display: none; max-width: 900px; margin: 0 auto; padding: 24px 32px; }
+#admin-view { display: none; max-width: 980px; margin: 0 auto; padding: 24px 32px; }
 #admin-view.open { display: block; }
 .section-title { font-family: 'Unbounded', sans-serif; font-size: 13px; font-weight: 600; margin-bottom: 16px; }
 .admin-form { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 20px; margin-bottom: 24px; display: flex; flex-direction: column; gap: 10px; }
@@ -135,14 +144,34 @@ textarea.add-input:focus { outline: 2px solid var(--todo-accent); border-color: 
 .admin-msg { font-size: 12px; min-height: 16px; }
 .admin-msg.ok { color: var(--done-accent); }
 .admin-msg.err { color: var(--danger); }
+
+/* Show passwords toggle */
+.pass-toggle-row { display: flex; align-items: center; gap: 8px; margin-bottom: 12px; }
+.pass-toggle-row label { font-size: 13px; color: var(--text); cursor: pointer; display: flex; align-items: center; gap: 7px; }
+.pass-toggle-row input[type=checkbox] { width: 16px; height: 16px; cursor: pointer; accent-color: var(--todo-accent); }
+
 .users-table { width: 100%; background: var(--surface); border: 1px solid var(--border); border-radius: 12px; overflow: hidden; border-collapse: collapse; }
 .users-table th { font-family: 'Unbounded', sans-serif; font-size: 10px; font-weight: 600; letter-spacing: 0.05em; text-transform: uppercase; color: var(--muted); padding: 10px 14px; text-align: left; border-bottom: 1px solid var(--border); background: var(--bg); }
-.users-table td { font-size: 13px; padding: 10px 14px; border-bottom: 1px solid var(--border); vertical-align: middle; }
+.users-table td { font-size: 13px; padding: 8px 14px; border-bottom: 1px solid var(--border); vertical-align: middle; }
 .users-table tr:last-child td { border-bottom: none; }
 .role-badge { font-size: 10px; font-weight: 600; padding: 2px 8px; border-radius: 99px; background: var(--urgent-bg); color: var(--urgent-text); }
 .role-badge.user { background: var(--regular-bg); color: var(--regular-text); }
 .btn-icon { border: none; background: transparent; cursor: pointer; color: var(--muted); font-size: 13px; padding: 3px 6px; border-radius: 5px; }
 .btn-icon:hover { background: #FDECEA; color: var(--danger); }
+
+/* Password cell */
+.pass-cell { font-family: monospace; font-size: 12px; color: var(--muted); letter-spacing: 0.05em; }
+.pass-cell.shown { color: var(--text); }
+.pass-dots { letter-spacing: 2px; }
+
+/* Change password inline */
+.change-pass-row { display: flex; gap: 6px; align-items: center; }
+.change-pass-row input { font-family: 'Inter', sans-serif; font-size: 12px; border: 1px solid var(--border); border-radius: 6px; padding: 4px 8px; background: var(--card-bg); color: var(--text); width: 120px; }
+.change-pass-row input:focus { outline: 2px solid var(--todo-accent); border-color: transparent; }
+.btn-change-pass { font-size: 11px; padding: 4px 10px; background: var(--todo-accent); color: #FAFAF8; border: none; border-radius: 6px; cursor: pointer; font-family: 'Inter', sans-serif; white-space: nowrap; }
+.btn-change-pass:hover { opacity: 0.82; }
+.pass-changed { font-size: 11px; color: var(--done-accent); font-weight: 500; }
+
 .history-section { margin-top: 28px; }
 .history-table { width: 100%; background: var(--surface); border: 1px solid var(--border); border-radius: 12px; overflow: hidden; border-collapse: collapse; }
 .history-table th { font-family: 'Unbounded', sans-serif; font-size: 10px; font-weight: 600; letter-spacing: 0.05em; text-transform: uppercase; color: var(--muted); padding: 10px 14px; text-align: left; border-bottom: 1px solid var(--border); background: var(--bg); }
@@ -172,6 +201,28 @@ textarea.add-input:focus { outline: 2px solid var(--todo-accent); border-color: 
     <input type="password" id="auth-pass" placeholder="Пароль" autocomplete="current-password">
     <div class="auth-error" id="auth-error"></div>
     <button class="btn-primary" id="btn-login" onclick="doLogin()">Войти →</button>
+    <button onclick="showReset()" style="background:none;border:none;font-size:12px;color:#888880;cursor:pointer;text-align:center;padding:4px 0;font-family:Inter,sans-serif;">Забыл пароль</button>
+  </div>
+</div>
+
+<!-- RESET SCREEN -->
+<div id="reset-screen" class="screen">
+  <div style="min-height:100vh;display:flex;align-items:center;justify-content:center;">
+    <div class="auth-box">
+      <h2>Сброс пароля</h2>
+      <p>Введите секретное слово для сброса пароля администратора</p>
+      <label>Имя администратора</label>
+      <input type="text" id="reset-name" placeholder="Ваше имя" autocomplete="off">
+      <label>Секретное слово</label>
+      <input type="password" id="reset-secret" placeholder="Секретное слово">
+      <label>Новый пароль</label>
+      <input type="password" id="reset-newpass" placeholder="Новый пароль">
+      <label>Повторите пароль</label>
+      <input type="password" id="reset-reppass" placeholder="Повторите новый пароль">
+      <div class="auth-error" id="reset-error"></div>
+      <button class="btn-primary" onclick="doReset()">Сбросить пароль →</button>
+      <button onclick="show('login-screen')" style="background:none;border:none;font-size:12px;color:#888880;cursor:pointer;font-family:Inter,sans-serif;">← Назад</button>
+    </div>
   </div>
 </div>
 
@@ -189,7 +240,8 @@ textarea.add-input:focus { outline: 2px solid var(--todo-accent); border-color: 
     </div>
   </header>
 
-  <div class="online-bar" id="online-bar">
+  <!-- Онлайн-бар — скрыт для не-админов -->
+  <div class="online-bar hidden" id="online-bar">
     <div class="online-dot"></div>
     <span style="margin-right:4px">Онлайн:</span>
   </div>
@@ -200,6 +252,18 @@ textarea.add-input:focus { outline: 2px solid var(--todo-accent); border-color: 
 
   <div id="admin-view">
     <div class="section-title">Управление сотрудниками</div>
+
+    <div class="admin-form" style="margin-bottom:16px">
+      <h3>Мой пароль</h3>
+      <div class="admin-row">
+        <div class="admin-field"><label>Текущий пароль</label><input type="password" id="my-pass-old" placeholder="Текущий пароль" maxlength="64"></div>
+        <div class="admin-field"><label>Новый пароль</label><input type="password" id="my-pass-new" placeholder="Новый пароль" maxlength="64"></div>
+        <div class="admin-field"><label>Повторите</label><input type="password" id="my-pass-rep" placeholder="Повторите новый" maxlength="64"></div>
+        <div class="admin-field" style="flex:0"><label>&nbsp;</label><button class="btn-primary" style="padding:8px 18px;font-size:12px" onclick="changeMyPassword()">Сохранить</button></div>
+      </div>
+      <div class="admin-msg" id="my-pass-msg"></div>
+    </div>
+
     <div class="admin-form">
       <h3>Добавить сотрудника</h3>
       <div class="admin-row">
@@ -209,10 +273,26 @@ textarea.add-input:focus { outline: 2px solid var(--todo-accent); border-color: 
       </div>
       <div class="admin-msg" id="admin-msg"></div>
     </div>
+
+    <div class="pass-toggle-row">
+      <label>
+        <input type="checkbox" id="show-passes-cb" onchange="togglePasswords()">
+        Показать пароли
+      </label>
+    </div>
+
     <table class="users-table">
-      <thead><tr><th>Имя</th><th>Роль</th><th>Часов в этом месяце</th><th></th></tr></thead>
+      <thead><tr>
+        <th>Имя</th>
+        <th>Роль</th>
+        <th>Пароль</th>
+        <th>Изменить пароль</th>
+        <th>Часов / мес</th>
+        <th></th>
+      </tr></thead>
       <tbody id="users-tbody"></tbody>
     </table>
+
     <div class="history-section" id="history-section" style="display:none">
       <div class="section-title" style="margin-top:8px">История часов по месяцам</div>
       <table class="history-table">
@@ -260,7 +340,6 @@ function show(id) { document.querySelectorAll('.screen').forEach(s => s.classLis
 function monthKey(ts) { const d = ts ? new Date(ts) : new Date(); return `${d.getFullYear()}_${String(d.getMonth()+1).padStart(2,'0')}`; }
 function monthLabel(key) { const [y,m] = key.split('_'); return new Date(+y,+m-1,1).toLocaleString('ru',{month:'long',year:'numeric'}); }
 
-// Сортировка: срочные вверху, затем по времени создания
 function sortCards(entries) {
   return entries.sort(([,a],[,b]) => {
     if (a.tag === 'urgent' && b.tag !== 'urgent') return -1;
@@ -281,7 +360,8 @@ async function doLogin() {
   const users = await fbGet('users');
   if (!users) {
     const hash = await hashPass(pass);
-    await fbSet(`users/${safe(name)}`, { name, role:'admin', hash });
+    // Первый пользователь — админ. Пароль сохраняем отдельно для отображения
+    await fbSet(`users/${safe(name)}`, { name, role:'admin', hash, passHint: pass.slice(-3) });
     me = { name, role:'admin' };
   } else {
     const key = safe(name), user = users[key];
@@ -307,14 +387,17 @@ function doLogout() {
 async function startApp() {
   show('app-screen');
   document.getElementById('header-name').textContent = me.name;
-  if (me.role==='admin') document.getElementById('admin-tab').style.display='flex';
+  if (me.role==='admin') {
+    document.getElementById('admin-tab').style.display='flex';
+    document.getElementById('online-bar').classList.remove('hidden');
+  }
   const key = safe(me.name);
   await fbSet(`presence/${key}`, Date.now());
   presenceTimer = setInterval(() => fbSet(`presence/${key}`, Date.now()), 20000);
 
   const es1 = fbListen(`cards/${key}`, async () => { myCards=(await fbGet(`cards/${key}`))||{}; if(currentTab==='board') render(); });
   const es2 = fbListen(`mirrors/${key}`, async () => { mirrorCards=(await fbGet(`mirrors/${key}`))||{}; if(currentTab==='board') render(); });
-  const es3 = fbListen('presence', async () => { onlineUsers=(await fbGet('presence'))||{}; renderOnlineBar(); });
+  const es3 = fbListen('presence', async () => { onlineUsers=(await fbGet('presence'))||{}; if(me.role==='admin') renderOnlineBar(); });
   const es4 = fbListen('users', async () => { allUsers=(await fbGet('users'))||{}; if(currentTab==='admin') renderAdmin(); if(currentTab==='board') render(); });
   eventSources = [es1, es2, es3, es4];
 
@@ -323,11 +406,12 @@ async function startApp() {
   onlineUsers=(await fbGet('presence'))||{};
   allUsers=(await fbGet('users'))||{};
 
-  render(); renderOnlineBar();
+  render();
+  if (me.role==='admin') renderOnlineBar();
   switchTab('board');
 }
 
-// ── Online bar ─────────────────────────────────────────────────────
+// ── Online bar (только для админа) ────────────────────────────────
 function renderOnlineBar() {
   const bar = document.getElementById('online-bar');
   bar.innerHTML = '<div class="online-dot"></div><span style="margin-right:4px">Онлайн:</span>';
@@ -359,7 +443,6 @@ function render() {
   const curMonth = monthKey();
 
   COLS.forEach((col, ci) => {
-    // Срочные вверху, затем по дате создания
     const colMyCards = sortCards(Object.entries(myCards).filter(([,c])=>c.col===col.id));
     const colMirrors = sortCards(Object.entries(mirrorCards).filter(([,m])=>m.col===col.id));
 
@@ -383,9 +466,11 @@ function render() {
       <div class="add-area">
         <button class="add-toggle" onclick="toggleForm('${col.id}')">+ Добавить задачу</button>
         <div class="add-form" id="form-${col.id}">
-          <textarea class="add-input" id="inp-${col.id}" rows="2" placeholder="Описание задачи..."></textarea>
+          <div class="add-form-top">
+            <button class="urgent-toggle" id="urg-${col.id}" title="Срочная задача" onclick="toggleUrgent('${col.id}')">🔥</button>
+            <textarea class="add-input" id="inp-${col.id}" rows="2" placeholder="Описание задачи..."></textarea>
+          </div>
           <div class="add-row">
-            <select id="tag-${col.id}"><option value="regular">Обычная</option><option value="urgent">Срочная</option></select>
             <span class="assign-label">Кому:</span>
             <select id="assign-${col.id}">
               <option value="${esc(me.name)}">Себе</option>
@@ -402,7 +487,6 @@ function render() {
 
     const list = el.querySelector(`#list-${col.id}`);
 
-    // Мои карточки
     colMyCards.forEach(([key, card]) => {
       const isAssigned = card.from && card.from !== me.name;
       const cardEl = document.createElement('div');
@@ -426,22 +510,25 @@ function render() {
               <button class="btn-sm" onclick="saveHours('${key}')">✓</button>
             </div>`;
       }
-      cardEl.innerHTML=`${fromLabel}<div class="card-text">${esc(card.text)}</div><div class="card-footer"><span class="tag tag-${card.tag}">${card.tag==='urgent'?'Срочно':'Обычная'}</span><div class="card-btns">${prevBtn}${nextBtn}<button class="btn-del" onclick="deleteCard('${key}')">✕</button></div></div>${hoursSection}`;
+      // Тег срочности на карточке — только "Срочно", без "Обычная"
+      const tagHTML = card.tag==='urgent'
+        ? `<span class="tag tag-urgent">Срочно</span>`
+        : '';
+      cardEl.innerHTML=`${fromLabel}<div class="card-text">${esc(card.text)}</div><div class="card-footer">${tagHTML}<div class="card-btns">${prevBtn}${nextBtn}<button class="btn-del" onclick="deleteCard('${key}')">✕</button></div></div>${hoursSection}`;
       cardEl.addEventListener('dragstart',()=>{ dragKey=key; setTimeout(()=>cardEl.classList.add('dragging'),0); });
       cardEl.addEventListener('dragend',()=>{ dragKey=null; cardEl.classList.remove('dragging'); document.querySelectorAll('.drop-zone').forEach(dz=>dz.classList.remove('over','visible')); });
       list.appendChild(cardEl);
     });
 
-    // Зеркальные карточки (назначенные мной другим)
     colMirrors.forEach(([mKey, mirror]) => {
       const mEl = document.createElement('div');
       mEl.className='card mirror';
       const mirrorHours = col.id==='done'&&mirror.hours?`<div class="hours-row"><span class="hours-saved">⏱ ${mirror.hours%1===0?mirror.hours:mirror.hours.toFixed(1)} ч</span></div>`:'';
-      mEl.innerHTML=`<div class="mirror-label"><span>👁</span><span>Назначено:</span><span class="assignee">${esc(mirror.assignedTo)}</span></div><div class="card-text">${esc(mirror.text)}</div><div class="card-footer"><span class="tag tag-${mirror.tag}">${mirror.tag==='urgent'?'Срочно':'Обычная'}</span><div class="card-btns" style="opacity:1"><button class="btn-del" onclick="recallTask('${mKey}')">✕</button></div></div>${mirrorHours}`;
+      const mirrorTag = mirror.tag==='urgent' ? `<span class="tag tag-urgent">Срочно</span>` : '';
+      mEl.innerHTML=`<div class="mirror-label"><span>👁</span><span>Назначено:</span><span class="assignee">${esc(mirror.assignedTo)}</span></div><div class="card-text">${esc(mirror.text)}</div><div class="card-footer">${mirrorTag}<div class="card-btns" style="opacity:1"><button class="btn-del" onclick="recallTask('${mKey}')">✕</button></div></div>${mirrorHours}`;
       list.appendChild(mEl);
     });
 
-    // Drag & drop
     const dz = el.querySelector(`#dz-${col.id}`);
     el.addEventListener('dragover',e=>{e.preventDefault();if(dragKey)dz.classList.add('visible','over');});
     el.addEventListener('dragleave',e=>{if(!el.contains(e.relatedTarget))dz.classList.remove('over','visible');});
@@ -452,6 +539,12 @@ function render() {
       await syncMirrorCol(dragKey,col.id);
     });
   });
+}
+
+// ── Urgent toggle ──────────────────────────────────────────────────
+function toggleUrgent(colId) {
+  const btn = document.getElementById('urg-'+colId);
+  btn.classList.toggle('active');
 }
 
 // ── Sync mirror ────────────────────────────────────────────────────
@@ -510,7 +603,8 @@ async function saveHours(key) {
 // ── Add card ───────────────────────────────────────────────────────
 async function handleAdd(colId) {
   const inp=document.getElementById('inp-'+colId);
-  const tag=document.getElementById('tag-'+colId).value;
+  const urgBtn=document.getElementById('urg-'+colId);
+  const tag = urgBtn.classList.contains('active') ? 'urgent' : 'regular';
   const assignTo=document.getElementById('assign-'+colId).value;
   const text=inp.value.trim(); if(!text) return;
   const myKey=safe(me.name);
@@ -522,6 +616,7 @@ async function handleAdd(colId) {
     await fbPush(`cards/${myKey}`,{col:colId,text,tag,from:me.name,ts:Date.now()});
   }
   inp.value='';
+  urgBtn.classList.remove('active');
   document.getElementById('form-'+colId).classList.remove('open');
 }
 
@@ -535,12 +630,14 @@ async function createUser() {
   const key=safe(nameVal);
   if(await fbGet(`users/${key}`)){msg.className='admin-msg err';msg.textContent='Пользователь уже существует';return;}
   const hash=await hashPass(passVal);
-  await fbSet(`users/${key}`,{name:nameVal,role:'user',hash});
+  // Сохраняем последние 3 символа пароля для подсказки + полный для отображения
+  await fbSet(`users/${key}`,{name:nameVal,role:'user',hash,passHint:passVal.slice(-3),passLen:passVal.length});
   document.getElementById('new-uname').value='';
   document.getElementById('new-upass').value='';
   msg.className='admin-msg ok'; msg.textContent=`✓ Сотрудник «${nameVal}» создан`;
   setTimeout(()=>{msg.textContent='';},3000);
 }
+
 async function deleteUser(key) {
   if(key===safe(me.name)) return;
   if(!confirm('Удалить пользователя и все его данные?')) return;
@@ -548,19 +645,68 @@ async function deleteUser(key) {
   await fbDelete(`mirrors/${key}`); await fbDelete(`presence/${key}`);
   await fbDelete(`history/${key}`);
 }
+
+async function changePassword(key) {
+  const inp = document.getElementById('newpass-'+key);
+  const newPass = inp?.value?.trim();
+  if (!newPass) return;
+  const hash = await hashPass(newPass);
+  await fbPatch(`users/${key}`, { hash, passHint: newPass.slice(-3), passLen: newPass.length });
+  inp.value = '';
+  const msg = document.getElementById('passmsg-'+key);
+  if (msg) { msg.textContent = '✓ Сохранено'; setTimeout(()=>{ msg.textContent=''; },2000); }
+}
+
+function togglePasswords() {
+  const show = document.getElementById('show-passes-cb').checked;
+  document.querySelectorAll('.pass-cell').forEach(el => {
+    const dots = el.querySelector('.pass-dots');
+    const full = el.querySelector('.pass-full');
+    if (dots && full) {
+      dots.style.display = show ? 'none' : 'inline';
+      full.style.display = show ? 'inline' : 'none';
+      el.classList.toggle('shown', show);
+    }
+  });
+}
+
 async function renderAdmin() {
   const tbody=document.getElementById('users-tbody');
-  tbody.innerHTML='<tr><td colspan="4" style="color:var(--muted);font-size:12px;padding:14px">Загружаем...</td></tr>';
+  tbody.innerHTML='<tr><td colspan="6" style="color:var(--muted);font-size:12px;padding:14px">Загружаем...</td></tr>';
   const curMonth=monthKey();
   const allHistory=(await fbGet('history'))||{};
+  const showPass = document.getElementById('show-passes-cb')?.checked;
   tbody.innerHTML='';
+
   Object.entries(allUsers).forEach(([key,u])=>{
     const isMe=key===safe(me.name);
     const monthHours=allHistory[key]?.[curMonth]||0;
+    const hint = u.passHint || '???';
+    const len = u.passLen || 8;
+    const dots = '•'.repeat(Math.max(1, len-3));
     const tr=document.createElement('tr');
-    tr.innerHTML=`<td>${esc(u.name)}${isMe?' <span style="font-size:11px;color:var(--muted)">(вы)</span>':''}</td><td><span class="role-badge ${u.role==='admin'?'':'user'}">${u.role==='admin'?'Админ':'Сотрудник'}</span></td><td style="color:var(--done-accent);font-weight:600">${monthHours%1===0?monthHours:monthHours.toFixed(1)} ч</td><td style="text-align:right">${!isMe?`<button class="btn-icon" onclick="deleteUser('${key}')">✕</button>`:''}</td>`;
+    tr.innerHTML=`
+      <td>${esc(u.name)}${isMe?' <span style="font-size:11px;color:var(--muted)">(вы)</span>':''}</td>
+      <td><span class="role-badge ${u.role==='admin'?'':'user'}">${u.role==='admin'?'Админ':'Сотрудник'}</span></td>
+      <td>
+        <span class="pass-cell${showPass?' shown':''}">
+          <span class="pass-dots" style="display:${showPass?'none':'inline'}">${dots}${esc(hint)}</span>
+          <span class="pass-full" style="display:${showPass?'inline':'none'}">${dots}${esc(hint)}</span>
+        </span>
+      </td>
+      <td>
+        ${!isMe ? `
+        <div class="change-pass-row">
+          <input type="password" id="newpass-${key}" placeholder="Новый пароль" maxlength="64">
+          <button class="btn-change-pass" onclick="changePassword('${key}')">Изменить</button>
+          <span class="pass-changed" id="passmsg-${key}"></span>
+        </div>` : '<span style="font-size:11px;color:var(--muted)">—</span>'}
+      </td>
+      <td style="color:var(--done-accent);font-weight:600">${monthHours%1===0?monthHours:monthHours.toFixed(1)} ч</td>
+      <td style="text-align:right">${!isMe?`<button class="btn-icon" onclick="deleteUser('${key}')">✕</button>`:''}</td>`;
     tbody.appendChild(tr);
   });
+
   const histSection=document.getElementById('history-section');
   const histTbody=document.getElementById('history-tbody');
   histTbody.innerHTML='';
@@ -577,20 +723,98 @@ async function renderAdmin() {
   histSection.style.display=hasHistory?'block':'none';
 }
 
+
+// ── Change my own password ─────────────────────────────────────────
+async function changeMyPassword() {
+  const oldPass = document.getElementById('my-pass-old').value;
+  const newPass = document.getElementById('my-pass-new').value;
+  const repPass = document.getElementById('my-pass-rep').value;
+  const msg = document.getElementById('my-pass-msg');
+  msg.className = 'admin-msg';
+
+  if (!oldPass || !newPass || !repPass) { msg.className='admin-msg err'; msg.textContent='Заполните все поля'; return; }
+  if (newPass !== repPass) { msg.className='admin-msg err'; msg.textContent='Новые пароли не совпадают'; return; }
+  if (newPass.length < 3) { msg.className='admin-msg err'; msg.textContent='Пароль слишком короткий'; return; }
+
+  const myKey = safe(me.name);
+  const user = await fbGet('users/' + myKey);
+  const oldHash = await hashPass(oldPass);
+  if (oldHash !== user.hash) { msg.className='admin-msg err'; msg.textContent='Текущий пароль неверный'; return; }
+
+  const newHash = await hashPass(newPass);
+  await fbPatch('users/' + myKey, { hash: newHash, passHint: newPass.slice(-3), passLen: newPass.length });
+
+  document.getElementById('my-pass-old').value = '';
+  document.getElementById('my-pass-new').value = '';
+  document.getElementById('my-pass-rep').value = '';
+  msg.className='admin-msg ok'; msg.textContent='✓ Пароль успешно изменён';
+  setTimeout(() => { msg.textContent = ''; }, 3000);
+}
+
 // ── Helpers ────────────────────────────────────────────────────────
 function toggleForm(colId) {
   const form=document.getElementById('form-'+colId);
   const isOpen=form.classList.contains('open');
-  document.querySelectorAll('.add-form').forEach(f=>f.classList.remove('open'));
+  document.querySelectorAll('.add-form').forEach(f=>{
+    f.classList.remove('open');
+    // Сбрасываем кнопку срочности при закрытии
+    const col = f.id.replace('form-','');
+    document.getElementById('urg-'+col)?.classList.remove('active');
+  });
   if(!isOpen){form.classList.add('open');document.getElementById('inp-'+colId).focus();}
 }
+
 document.addEventListener('keydown',e=>{
-  if(e.key==='Escape') document.querySelectorAll('.add-form').forEach(f=>f.classList.remove('open'));
+  if(e.key==='Escape'){
+    document.querySelectorAll('.add-form').forEach(f=>{
+      f.classList.remove('open');
+      const col = f.id.replace('form-','');
+      document.getElementById('urg-'+col)?.classList.remove('active');
+    });
+  }
   if(e.key==='Enter'&&e.target.classList.contains('add-input')){if(e.shiftKey)return;e.preventDefault();handleAdd(e.target.id.replace('inp-',''));}
 });
 ['auth-name','auth-pass'].forEach(id=>{
   document.getElementById(id).addEventListener('keydown',e=>{if(e.key==='Enter')doLogin();});
 });
+
+
+// ── Emergency reset ───────────────────────────────────────────────
+const SECRET_WORD = 'Хушет';
+
+function showReset() {
+  show('reset-screen');
+}
+
+async function doReset() {
+  const name = document.getElementById('reset-name').value.trim();
+  const secret = document.getElementById('reset-secret').value;
+  const newPass = document.getElementById('reset-newpass').value;
+  const repPass = document.getElementById('reset-reppass').value;
+  const errEl = document.getElementById('reset-error');
+  errEl.textContent = '';
+
+  if (!name || !secret || !newPass || !repPass) { errEl.textContent = 'Заполните все поля'; return; }
+  if (secret !== SECRET_WORD) { errEl.textContent = 'Неверное секретное слово'; return; }
+  if (newPass !== repPass) { errEl.textContent = 'Пароли не совпадают'; return; }
+  if (newPass.length < 3) { errEl.textContent = 'Пароль слишком короткий'; return; }
+
+  const key = safe(name);
+  const user = await fbGet('users/' + key);
+  if (!user) { errEl.textContent = 'Пользователь не найден'; return; }
+  if (user.role !== 'admin') { errEl.textContent = 'Сброс доступен только для администратора'; return; }
+
+  const newHash = await hashPass(newPass);
+  await fbPatch('users/' + key, { hash: newHash, passHint: newPass.slice(-3), passLen: newPass.length });
+
+  document.getElementById('reset-name').value = '';
+  document.getElementById('reset-secret').value = '';
+  document.getElementById('reset-newpass').value = '';
+  document.getElementById('reset-reppass').value = '';
+  errEl.style.color = 'var(--done-accent)';
+  errEl.textContent = '✓ Пароль сброшен! Войдите с новым паролем.';
+  setTimeout(() => { show('login-screen'); errEl.style.color=''; errEl.textContent=''; }, 2000);
+}
 
 // ── Auto-login ─────────────────────────────────────────────────────
 (async()=>{
